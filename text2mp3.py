@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# required `pip install gTTS`
+# required `pip install gTTS` or use your distro package manager
 
 import sys
 import os
