@@ -10,6 +10,8 @@ python3 text2mp3 file.txt
 ```
 
 Requires: mpg123 or ffplay
+<br>
+Requires: gTTS
 
 ---
 Minimum required: Python 3.6 (because of f-strings and gTTS).
