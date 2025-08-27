@@ -15,3 +15,7 @@ Requires: gTTS
 
 ---
 Minimum required: Python 3.6 (because of f-strings and gTTS).
+
+---
+
+For the lm-studio support see README.md in lm-studio folder.
