@@ -1,7 +1,7 @@
 import os
-import tempfile
 import shutil
-from gtts import gTTS
+import asyncio
+from edge_tts import Communicate
 
 SUPPORTED_LANGS = {
     "en": "English",
@@ -24,14 +24,32 @@ def play_audio(filename, player=None):
     else:
         print("No supported audio player found.")
 
+async def _speak_edge_tts(text, voice="en-US-AriaNeural", filename="tts_output.mp3"):
+    communicate = Communicate(text, voice)
+    await communicate.save(filename)
+
 def text_to_speech(text, lang="en", player=None):
     if lang not in SUPPORTED_LANGS:
         print(f"Language '{lang}' not supported. Falling back to English.")
         lang = "en"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
-        filename = tmp.name
-    tts = gTTS(text=text, lang=lang)
-    tts.save(filename)
+
+    # Map language codes to Microsoft voices (you can adjust these)
+    lang_voice_map = {
+        "en": "en-US-AriaNeural",
+        "es": "es-ES-ElviraNeural",
+        "fr": "fr-FR-DeniseNeural",
+        "de": "de-DE-KatjaNeural",
+        "it": "it-IT-ElsaNeural",
+        "pt": "pt-PT-HeloisaNeural",
+        "ja": "ja-JP-NanamiNeural",
+        "ko": "ko-KR-SunHiNeural",
+        "zh": "zh-CN-XiaoxiaoNeural",
+        "el": "el-GR-AthinaNeural",
+    }
+
+    voice = lang_voice_map.get(lang, "en-US-AriaNeural")
+    filename = "tts_output.mp3"
+    asyncio.run(_speak_edge_tts(text, voice=voice, filename=filename))
     play_audio(filename, player=player)
     os.remove(filename)
 
