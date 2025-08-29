@@ -8,18 +8,25 @@ import sys
 sys.path.insert(0, ".")
 from local_tts import speak_gpt_response, choose_language
 
-CONVO_FILE = Path.home() / ".lmstudio/conversations/empty.conversation.json"
+CONVO_DIR = Path.home() / ".lmstudio/conversations"
 
 current_lang = "en"
 spoken_messages = set()
 spoken_steps = {}
 
-def get_latest_text():
-    if not CONVO_FILE.exists():
+def get_latest_convo_file():
+    files = list(CONVO_DIR.glob("*.conversation.json"))
+    if not files:
+        return None
+    # return the most recently modified conversation file
+    return max(files, key=lambda f: f.stat().st_mtime)
+
+def get_latest_text(convo_file):
+    if not convo_file.exists():
         return []
 
     try:
-        with CONVO_FILE.open("r", encoding="utf-8") as f:
+        with convo_file.open("r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         print(f"[TTS] Failed to read JSON: {e}")
@@ -58,14 +65,19 @@ def get_latest_text():
     return texts_to_speak
 
 def watcher():
-    print(f"[TTS] Watching {CONVO_FILE}")
+    print(f"[TTS] Watching {CONVO_DIR}")
     last_mtime = 0
     while True:
         try:
-            mtime = CONVO_FILE.stat().st_mtime
+            convo_file = get_latest_convo_file()
+            if convo_file is None:
+                time.sleep(1)
+                continue
+
+            mtime = convo_file.stat().st_mtime
             if mtime != last_mtime:
                 last_mtime = mtime
-                texts = get_latest_text()
+                texts = get_latest_text(convo_file)
                 for t in texts:
                     try:
                         speak_gpt_response(t, lang=current_lang)
