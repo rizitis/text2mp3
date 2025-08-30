@@ -1,7 +1,7 @@
 import os
-import shutil
-import asyncio
-from edge_tts import Communicate
+import platform
+from kokoro import KPipeline
+import soundfile as sf
 
 SUPPORTED_LANGS = {
     "en": "English",
@@ -10,48 +10,45 @@ SUPPORTED_LANGS = {
     "de": "German",
     "it": "Italian",
     "pt": "Portuguese",
-    "ja": "Japanese",
-    "ko": "Korean",
-    "zh": "Chinese",
-    "el": "Greek",
 }
 
-def play_audio(filename, player=None):
-    if player == "mpg123" or (player is None and shutil.which("mpg123")):
-        os.system(f"mpg123 -q {filename}")
-    elif player == "ffplay" or (player is None and shutil.which("ffplay")):
-        os.system(f"ffplay -nodisp -autoexit -loglevel quiet {filename}")
-    else:
-        print("No supported audio player found.")
+# Initialize Kokoro pipelines for supported languages
+PIPELINES = {
+    "en": KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M"),
+    "es": KPipeline(lang_code="e", repo_id="hexgrad/Kokoro-82M"),
+    "fr": KPipeline(lang_code="f", repo_id="hexgrad/Kokoro-82M"),
+    "de": KPipeline(lang_code="b", repo_id="hexgrad/Kokoro-82M"),
+    "it": KPipeline(lang_code="i", repo_id="hexgrad/Kokoro-82M"),
+    "pt": KPipeline(lang_code="p", repo_id="hexgrad/Kokoro-82M"),
+}
 
-async def _speak_edge_tts(text, voice="en-US-AriaNeural", filename="tts_output.mp3"):
-    communicate = Communicate(text, voice)
-    await communicate.save(filename)
+def play_audio(filename):
+    """Play audio file cross-platform using system default player."""
+    system = platform.system()
+    if system == "Windows":
+        os.startfile(filename)
+    elif system == "Darwin":  # macOS
+        os.system(f"afplay '{filename}'")
+    else:  # Slackware Linux / other
+        # Try aplay, ffplay, or mpv
+        if os.system(f"aplay '{filename}'") != 0:
+            if os.system(f"ffplay -nodisp -autoexit -loglevel quiet '{filename}'") != 0:
+                print(f"Please open {filename} to play audio manually.")
 
-def text_to_speech(text, lang="en", player=None):
+def text_to_speech(text, lang="en", voice="af_heart"):
     if lang not in SUPPORTED_LANGS:
         print(f"Language '{lang}' not supported. Falling back to English.")
         lang = "en"
 
-    # Map language codes to Microsoft voices (you can adjust these)
-    lang_voice_map = {
-        "en": "en-US-AriaNeural",
-        "es": "es-ES-ElviraNeural",
-        "fr": "fr-FR-DeniseNeural",
-        "de": "de-DE-KatjaNeural",
-        "it": "it-IT-ElsaNeural",
-        "pt": "pt-PT-HeloisaNeural",
-        "ja": "ja-JP-NanamiNeural",
-        "ko": "ko-KR-SunHiNeural",
-        "zh": "zh-CN-XiaoxiaoNeural",
-        "el": "el-GR-AthinaNeural",
-    }
+    pipeline = PIPELINES[lang]
 
-    voice = lang_voice_map.get(lang, "en-US-AriaNeural")
-    filename = "tts_output.mp3"
-    asyncio.run(_speak_edge_tts(text, voice=voice, filename=filename))
-    play_audio(filename, player=player)
-    os.remove(filename)
+    generator = pipeline(text, voice=voice, speed=1, split_pattern=r"\n+")
+
+    for i, (gs, ps, audio) in enumerate(generator):
+        filename = f"tts_output_{i}.wav"
+        sf.write(filename, audio, 24000)
+        print(f"Saved: {filename}")
+        play_audio(filename)
 
 def choose_language(current_lang="en"):
     print("Available languages:")
@@ -64,5 +61,11 @@ def choose_language(current_lang="en"):
     print(f"Language set to: {SUPPORTED_LANGS[lang]}")
     return lang
 
-def speak_gpt_response(text, lang="en", player=None):
-    text_to_speech(text, lang=lang, player=player)
+def speak_gpt_response(text, lang="en", voice="af_heart"):
+    text_to_speech(text, lang=lang, voice=voice)
+
+# Example usage
+if __name__ == "__main__":
+    lang = choose_language()
+    sample_text = "Hello! This is a test of Kokoro TTS on desktop."
+    speak_gpt_response(sample_text, lang=lang)

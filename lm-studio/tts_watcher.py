@@ -95,7 +95,8 @@ if __name__ == "__main__":
     watcher_thread = threading.Thread(target=watcher, daemon=True)
     watcher_thread.start()
 
-    # live language switching (beta option)
+    # live language switching (beta option NOT tested with koroko)
+    # And tbh I think its wrong idea its better to do this from local_tts...
     while True:
         try:
             cmd = input()
