@@ -20,3 +20,9 @@ Minimum required: Python 3.6 (because of f-strings and gTTS).
 
 For the **lm-studio-AppImage** and 100% offline support, see README.md in the lm-studio folder.<br>
 Have fun!
+
+---
+
+[LM Studio Desktop App Privacy Policy](https://lmstudio.ai/app-privacy)  [LM Studio Desktop App Terms of Service](https://lmstudio.ai/app-terms)
+
+[hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) [LICENSE](https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md)
